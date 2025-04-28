@@ -41,16 +41,7 @@ const HeroSection = () => {
           <img src={HeroImg} alt='Crime Awareness' />
         </div>
       </div>
-      <div className="details">
-        {details.map(element => (
-          <div className="card" key={element.id}>
-            <div className="icon">{element.icon}</div>
-            <div className="content">
-              <p>{element.title}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+
     </div>
   )
 }

@@ -296,6 +296,34 @@ useEffect(() => {
                       </p>
                     </div>
                   )}
+                  {displayCase.fileAttachments && displayCase.fileAttachments.length > 0 && (
+    <div className="attachments-container">
+      <p className="info-label">Attachments</p>
+      <div className="attachments-list">
+        {displayCase.fileAttachments.map((attachment, index) => (
+          <div key={index} className="attachment-item">
+            <p className="attachment-name">{attachment.fileName}</p>
+            {attachment.fileType.startsWith("image") ? (
+              <img
+                src={attachment.filePath}
+                alt={attachment.fileName}
+                className="attachment-image"
+              />
+            ) : (
+              <a
+                href={attachment.filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="attachment-link"
+              >
+                View Attachment
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
                 </div>
                 
                 {/* Case Timeline - simplified */}

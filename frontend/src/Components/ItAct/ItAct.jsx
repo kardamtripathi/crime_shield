@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import "./ItActInfo.css";
+import business from '../../assets/business.jpg';
+import individual from '../../assets/individual.webp';
+import government from '../../assets/government.webp';
 
 const ItActInfo = () => {
   const [openAccordion, setOpenAccordion] = useState(null);
@@ -76,15 +79,18 @@ const ItActInfo = () => {
   const caseStudies = [
     {
       title: "Shreya Singhal v. Union of India (2015)",
-      summary: "Supreme Court struck down Section 66A of the IT Act as unconstitutional for violating freedom of speech."
+      summary: "Supreme Court struck down Section 66A of the IT Act as unconstitutional for violating freedom of speech.",
+      link: 'https://indiankanoon.org/doc/110813550/'
     },
     {
       title: "Justice K.S. Puttaswamy v. Union of India (2017)",
-      summary: "Privacy judgment that impacted interpretation of data protection provisions under the IT Act."
+      summary: "Privacy judgment that impacted interpretation of data protection provisions under the IT Act.",
+      link: "https://indiankanoon.org/doc/127517806/"
     },
     {
       title: "Facebook v. Union of India (2019)",
-      summary: "Case related to traceability requirements for messaging platforms under the IT Act."
+      summary: "Case related to traceability requirements for messaging platforms under the IT Act.", 
+      link: "https://indiankanoon.org/doc/90111783/"
     }
   ];
 
@@ -194,20 +200,20 @@ const ItActInfo = () => {
 
       {/* Timeline Section */}
       <section className="timeline-section">
-        <div className="container">
-          <h2 className="section-title">Evolution of the IT Act</h2>
-          <div className="timeline">
-            {timelineEvents.map((item, index) => (
-              <div className="timeline-item" key={index}>
-                <div className="timeline-badge">{item.year}</div>
-                <div className="timeline-content">
-                  <p>{item.event}</p>
-                </div>
+      <div className="container">
+        <h2 className="section-title">Evolution of the IT Act</h2>
+        <div className="timeline">
+          {timelineEvents.map((item, index) => (
+            <div className="timeline-item" key={index}>
+              <div className="timeline-badge">{item.year}</div>
+              <div className="timeline-content">
+                <p>{item.event}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Tabs Section */}
       <section className="tabs-section">
@@ -241,7 +247,7 @@ const ItActInfo = () => {
                 <div className="tab-pane">
                   <div className="tab-grid">
                     <div className="tab-image">
-                      <img src="https://source.unsplash.com/800x600/?business,technology" alt="Business Technology" />
+                      <img src={business} alt="Business Technology" />
                     </div>
                     <div className="tab-text">
                       <h3>Implications for Businesses</h3>
@@ -263,7 +269,7 @@ const ItActInfo = () => {
                 <div className="tab-pane">
                   <div className="tab-grid">
                     <div className="tab-image">
-                      <img src="https://source.unsplash.com/800x600/?user,privacy" alt="User Privacy" />
+                      <img src={individual} alt="User Privacy" />
                     </div>
                     <div className="tab-text">
                       <h3>Protecting Individual Rights</h3>
@@ -285,7 +291,7 @@ const ItActInfo = () => {
                 <div className="tab-pane">
                   <div className="tab-grid">
                     <div className="tab-image">
-                      <img src="https://source.unsplash.com/800x600/?government,digital" alt="Digital Governance" />
+                      <img src={government} alt="Digital Governance" />
                     </div>
                     <div className="tab-text">
                       <h3>E-Governance Framework</h3>
@@ -316,7 +322,7 @@ const ItActInfo = () => {
               <div className="case-study-card" key={index}>
                 <h3>{caseStudy.title}</h3>
                 <p>{caseStudy.summary}</p>
-                <a href="#" className="case-link">Read Full Case Analysis</a>
+                <a href={caseStudy.link} className="case-link" target="_blank" rel="noopener noreferrer">Read Full Case Analysis</a>
               </div>
             ))}
           </div>

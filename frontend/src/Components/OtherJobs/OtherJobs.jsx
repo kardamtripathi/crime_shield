@@ -63,7 +63,6 @@ const OtherJobs = () => {
       setLoading(true);
       const initialTopic = "cyber crime";
       const initialLocation = "India"
-      console.log(crimeTopic, "hoho ", location);
       setCrimeTopic(initialTopic);
       setLocation(initialLocation);
       const response = await axios.get(

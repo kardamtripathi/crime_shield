@@ -1,168 +1,11 @@
 import express from "express"
-import { getAllJobs, postJob, getMyJobs, updateJob, deleteJob, getSingleJob } from "../controllers/jobController.js";
 const router = express.Router();
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 import CyberCrimeCase from "../models/cyberCrimeModel.js";
 import { isAuthenticated, authorizeRoles, isAuthorized } from "../middlewares/auth.js";
 import {v4 as uuidv4} from "uuid";
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    const uploadDir = 'uploads/cases/';
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: function(req, file, cb) {
-    // Create a unique filename with timestamp and original extension
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// File filter to restrict file types
-const fileFilter = (req, file, cb) => {
-  // Accept images, documents, and PDFs
-  const allowedFileTypes = [
-    'image/jpeg', 
-    'image/png', 
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain'
-  ];
-  
-  if (allowedFileTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, PDF, DOC, DOCX, and TXT files are allowed.'), false);
-  }
-};
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB limit
-    files: 5 // Maximum 5 files
-  }
-});
-
-// Submit a new cyber crime case
-router.post(
-  "/submit",
-  isAuthorized,
-  async (req, res) => {
-    console.log("here1");
-    try {
-      const {
-        name,
-        mobile,
-        email,
-        address,
-        idProofType,
-        idProofNumber,
-        crimeType,
-        subCategory,
-        crimeDateTime,
-        location,
-        platformOrWebsite,
-        suspectInfo,
-        description,
-        monetaryLoss,
-        evidenceDescription
-      } = req.body;
-
-      // Prepare file attachments data
-      const fileAttachments = req?.files?.map(file => ({
-        fileName: file.originalname,
-        fileType: file.mimetype,
-        filePath: file.path,
-        fileSize: file.size
-      }));
-
-      // Parse the address object
-      let addressObj;
-      try {
-        addressObj = JSON.parse(address);
-      } catch (error) {
-        // If address isn't a JSON string, assume it's already an object
-        addressObj = address;
-      }
-
-      // Parse suspect info if provided as string
-      let suspectInfoObj;
-      try {
-        suspectInfoObj = suspectInfo ? JSON.parse(suspectInfo) : {};
-      } catch (error) {
-        suspectInfoObj = suspectInfo || {};
-      }
-
-      // Parse monetary loss if provided
-      let monetaryLossObj = { amount: 0, currency: "USD" };
-      if (monetaryLoss) {
-        try {
-          monetaryLossObj = JSON.parse(monetaryLoss);
-        } catch (error) {
-          monetaryLossObj.amount = parseFloat(monetaryLoss) || 0;
-        }
-      }
-
-      // Create new case
-      const caseId = uuidv4();
-      const newCase = await CyberCrimeCase.create({
-        complainant: {
-          name,
-          mobile,
-          email,
-          address: addressObj,
-          idProofType,
-          idProofNumber
-        },
-        crimeDetails: {
-          crimeType,
-          subCategory: subCategory || "",
-          crimeDateTime: new Date(crimeDateTime),
-          location,
-          platformOrWebsite: platformOrWebsite || "",
-          suspectInfo: suspectInfoObj,
-          description,
-          monetaryLoss: monetaryLossObj,
-          evidenceDescription: evidenceDescription || ""
-        },
-        fileAttachments,
-        submittedBy: req.user._id,
-        caseId: caseId,
-      });
-      console.log("here3");
-
-      res.status(201).json({
-        success: true,
-        message: "Cyber crime case submitted successfully",
-        caseId: newCase.caseId
-      });
-    } catch (error) {
-      // If an error occurs, delete any uploaded files
-      if (req.files) {
-        req.files.forEach(file => {
-          fs.unlink(file.path, (err) => {
-            if (err) console.error("Error deleting file:", err);
-          });
-        });
-      }
-      
-      res.status(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
-);
+import cloudinary from "cloudinary";
+import multer from "multer";
+import fs from "fs";
 
 // Get all cyber crime cases (for officials)
 router.get(
@@ -222,7 +65,7 @@ router.get(
 // Get details of a specific case
 router.get(
   "/:caseId",
-  isAuthenticated,
+  isAuthorized,
   async (req, res) => {
     try {
       const { caseId } = req.params;
@@ -347,5 +190,120 @@ router.post("/update/:caseId", isAuthorized, async(req, res) => {
   }
 });
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {fileSize: 10 * 1024 * 1024, // 10MB per file
+    fieldSize: 15 * 1024 * 1024, // 15MB for the entire form
+    files: 5 // Max 5 files}// 10MB
+}});
+
+router.post('/submit', isAuthorized, upload.array('attachments', 5), async (req, res) => {
+  try {
+    // Parse JSON strings from form data
+    const address = JSON.parse(req.body.address || '{}');
+    const suspectInfo = JSON.parse(req.body.suspectInfo || '{}');
+    const monetaryLoss = JSON.parse(req.body.monetaryLoss || '{}');
+
+    // Create new cybercrime case with basic info
+    const newCaseData = {
+      caseId: uuidv4().substring(0,8),
+      complainant: {
+        name: req.body.name,
+        mobile: req.body.mobile,
+        email: req.body.email,
+        address: {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country
+        },
+        idProofType: req.body.idProofType,
+        idProofNumber: req.body.idProofNumber
+      },
+      crimeDetails: {
+        crimeType: req.body.crimeType,
+        subCategory: req.body.subCategory,
+        crimeDateTime: req.body.crimeDateTime,
+        location: req.body.location,
+        platformOrWebsite: req.body.platformOrWebsite,
+        suspectInfo: {
+          name: suspectInfo.name,
+          contactInfo: suspectInfo.contactInfo,
+          ipAddress: suspectInfo.ipAddress,
+          otherDetails: suspectInfo.otherDetails
+        },
+        description: req.body.description,
+        monetaryLoss: {
+          amount: parseFloat(monetaryLoss.amount) || 0,
+          currency: monetaryLoss.currency || 'INR'
+        },
+        evidenceDescription: req.body.evidenceDescription
+      },
+      caseStatus: 'Submitted',
+      priority: 'Medium',
+      submittedBy: req.user._id // Assuming authentication middleware sets req.user
+    };
+
+    // Process multiple file attachments from Cloudinary if they exist
+    console.log("Req files: ", req.files); // Changed from req.body.attachments
+    
+// Check if there are files uploaded
+if (req.files && req.files.length > 0) { // Changed from req.body.attachments
+  // Initialize an array to hold file attachment data
+  const fileAttachmentsArray = [];
+  
+  // Process each file with Cloudinary
+  for (const file of req.files) { // Changed from req.body.attachments
+    const response = await cloudinary.uploader.upload(file.path, {
+      resource_type: "auto"
+    });
+    
+    // Add file to the attachments array
+    fileAttachmentsArray.push({
+      fileName: file.originalname,
+      fileType: file.mimetype,
+      filePath: response.secure_url,
+      publicId: response.public_id
+    });
+    
+    // Clean up the temporary file
+    fs.unlinkSync(file.path);
+  }
+  
+  // Add file attachments to the case data
+  newCaseData.fileAttachments = fileAttachmentsArray;
+}
+
+    // Create and save the new case
+    const newCase = new CyberCrimeCase(newCaseData);
+    await newCase.save();
+
+    // Return success response
+    return res.status(201).json({
+      success: true,
+      message: 'Cybercrime case submitted successfully',
+      caseId: newCase.caseId
+    });
+
+  } catch (error) {
+    console.error('Error submitting cybercrime case:', error);
+  
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while submitting your case',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Server error'
+    });
+  }
+});
 
 export default router;

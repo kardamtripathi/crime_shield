@@ -34,13 +34,9 @@ const fileAttachmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  fileSize: {
-    type: Number,
+  publicId: {
+    type: String,
     required: true
-  },
-  uploadedAt: {
-    type: Date,
-    default: Date.now
   }
 });
 
@@ -143,7 +139,7 @@ const cyberCrimeSchema = new mongoose.Schema({
       },
       currency: {
         type: String,
-        default: "USD"
+        default: "INR"
       }
     },
     evidenceDescription: {

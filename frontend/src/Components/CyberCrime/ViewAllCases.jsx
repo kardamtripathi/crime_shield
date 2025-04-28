@@ -3,7 +3,9 @@ import axios from 'axios';
 import './ViewAllCases.css';
 
 const ViewAllCases = () => {
+  // State management
   const [cases, setCases] = useState([]);
+  const [filteredCases, setFilteredCases] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,37 +15,39 @@ const ViewAllCases = () => {
   const [updatedPriority, setUpdatedPriority] = useState('');
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
-
-  // Status options for the dropdown
-  const statusOptions = [
-    'Submitted',
-    'Under Review',
-    'Investigation',
-    'Resolved',
-    'Closed',
-    'Rejected'
+  
+  // Filter and sort states
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [crimeTypeFilter, setCrimeTypeFilter] = useState('All');
+  const [timeframeFilter, setTimeframeFilter] = useState('All');
+  const [sortOption, setSortOption] = useState('newest');
+  
+  // Options for dropdowns
+  const statusOptions = ['Submitted', 'Under Review', 'Investigation', 'Resolved', 'Closed', 'Rejected'];
+  const priorityOptions = ['Low', 'Medium', 'High', 'Urgent'];
+  const crimeTypeOptions = ['Phishing', 'Identity Theft', 'Data Breach', 'Ransomware', 'Online Fraud', 'Cyber Stalking', 'Hacking'];
+  const timeframeOptions = ['All', 'Today', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days'];
+  const sortOptions = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'priorityHigh', label: 'Priority (High to Low)' },
+    { value: 'priorityLow', label: 'Priority (Low to High)' },
   ];
 
-  // Priority options for the dropdown
-  const priorityOptions = [
-    'Low',
-    'Medium',
-    'High',
-    'Urgent'
-  ];
-
+  // Fetch cases on component mount
   useEffect(() => {
     const fetchCases = async () => {
       try {
         setLoading(true);
-        // Axios already parses JSON responses automatically
         const response = await axios.get('http://localhost:4000/api/cybercrime/all', {
           withCredentials: true
         });
         
-        // With axios, the response data is in response.data
         if (response.data.success) {
-          setCases(response.data.cases || []);
+          const fetchedCases = response.data.cases || [];
+          setCases(fetchedCases);
+          setFilteredCases(fetchedCases);
         } else {
           setError(response.data.message || 'Failed to fetch cases');
         }
@@ -58,15 +62,92 @@ const ViewAllCases = () => {
     fetchCases();
   }, []);
 
+  // Initialize edit form values when a case is selected
   useEffect(() => {
-    // Initialize edit form values when a case is selected
     if (selectedCase) {
       setUpdatedStatus(selectedCase.caseStatus);
       setUpdatedPriority(selectedCase.priority);
     }
   }, [selectedCase]);
 
+  // Apply filters and sorting
+  useEffect(() => {
+    if (!cases.length) return;
+    
+    let result = [...cases];
+    
+    // Apply filters
+    if (statusFilter !== 'All') {
+      result = result.filter(c => c.caseStatus === statusFilter);
+    }
+    
+    if (priorityFilter !== 'All') {
+      result = result.filter(c => c.priority === priorityFilter);
+    }
+    
+    if (crimeTypeFilter !== 'All') {
+      result = result.filter(c => c.crimeDetails.crimeType === crimeTypeFilter);
+    }
+    
+    if (timeframeFilter !== 'All') {
+      const now = new Date();
+      let cutoffDate;
+      
+      switch (timeframeFilter) {
+        case 'Today':
+          cutoffDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case 'Last 7 Days':
+          cutoffDate = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case 'Last 30 Days':
+          cutoffDate = new Date(now.setDate(now.getDate() - 30));
+          break;
+        case 'Last 90 Days':
+          cutoffDate = new Date(now.setDate(now.getDate() - 90));
+          break;
+        default:
+          cutoffDate = null;
+      }
+      
+      if (cutoffDate) {
+        result = result.filter(c => new Date(c.submittedAt) >= cutoffDate);
+      }
+    }
+    
+    // Apply sorting
+    switch (sortOption) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+        break;
+      case 'priorityHigh':
+        const priorityOrder = { 'Urgent': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
+        result.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        break;
+      case 'priorityLow':
+        const priorityOrderReverse = { 'Low': 0, 'Medium': 1, 'High': 2, 'Urgent': 3 };
+        result.sort((a, b) => priorityOrderReverse[a.priority] - priorityOrderReverse[b.priority]);
+        break;
+      case 'caseIdAsc':
+        result.sort((a, b) => a.caseId.localeCompare(b.caseId));
+        break;
+      case 'caseIdDesc':
+        result.sort((a, b) => b.caseId.localeCompare(a.caseId));
+        break;
+      default:
+        break;
+    }
+    
+    setFilteredCases(result);
+    
+  }, [cases, statusFilter, priorityFilter, crimeTypeFilter, timeframeFilter, sortOption, selectedCase]);
+
   const handleViewCase = async (caseId) => {
+    if (!caseId.trim()) return;
+    
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:4000/api/cybercrime/${caseId}`, {
@@ -75,11 +156,11 @@ const ViewAllCases = () => {
       
       if (response.data.success) {
         setSelectedCase(response.data.case);
-        // Reset editing state when viewing a new case
         setIsEditing(false);
         setUpdateSuccess(false);
       } else {
         setError(response.data.message || 'Failed to fetch case details');
+        setSelectedCase(null);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Error connecting to server');
@@ -145,53 +226,19 @@ const ViewAllCases = () => {
     }
   };
 
-  // Sample data for demonstration
-  const sampleCases = [
-    {
-      caseId: 'CC-202503-0001',
-      complainant: { name: 'John Doe' },
-      crimeDetails: { 
-        crimeType: 'Phishing', 
-        crimeDateTime: '2025-03-01T10:30:00Z',
-        description: 'A detailed description of the phishing attempt that occurred through email, claiming to be from a financial institution and requesting personal banking details.'
-      },
-      caseStatus: 'Under Review',
-      priority: 'High',
-      submittedAt: '2025-03-01T12:45:00Z'
-    },
-    {
-      caseId: 'CC-202503-0002',
-      complainant: { 
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        mobile: '9876543210' 
-      },
-      crimeDetails: { 
-        crimeType: 'Identity Theft', 
-        crimeDateTime: '2025-03-03T15:20:00Z',
-        location: 'Online',
-        platformOrWebsite: 'social-network.com'
-      },
-      caseStatus: 'Investigation',
-      priority: 'Medium',
-      submittedAt: '2025-03-03T17:30:00Z'
-    },
-    {
-      caseId: 'CC-202502-0015',
-      complainant: { name: 'Alex Johnson' },
-      crimeDetails: { 
-        crimeType: 'Data Breach', 
-        crimeDateTime: '2025-02-27T08:15:00Z',
-        monetaryLoss: { amount: 5000, currency: 'USD' }
-      },
-      caseStatus: 'Submitted',
-      priority: 'Urgent',
-      submittedAt: '2025-02-27T09:45:00Z'
-    }
-  ];
+  const handleResetFilters = () => {
+    setStatusFilter('All');
+    setPriorityFilter('All');
+    setCrimeTypeFilter('All');
+    setTimeframeFilter('All');
+    setSortOption('newest');
+    setSelectedCase(null);
+  };
 
   // Format date to readable format
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    
     const options = { 
       year: 'numeric', 
       month: 'short', 
@@ -202,13 +249,91 @@ const ViewAllCases = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // For demo purposes, use sample cases
-  const displayCases = cases.length > 0 ? cases : sampleCases;
-  const displayCase = selectedCase || (searchId && sampleCases.find(c => c.caseId === searchId));
-
   return (
     <div className="cases-container">
       <h1 className="main-title">Cyber Crime Case Management</h1>
+      
+      {/* Inline Filters and Sort */}
+      <div className="inline-filters-container card">
+        <div className="inline-filters-header">
+          <h2>Filters and Sort</h2>
+          <button className="reset-filters-button" onClick={handleResetFilters}>
+            Reset
+          </button>
+        </div>
+        
+        <div className="inline-filters-content">
+          <div className="inline-filter-group">
+            <label htmlFor="statusFilter">Status:</label>
+            <select
+              id="statusFilter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {statusOptions.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="inline-filter-group">
+            <label htmlFor="priorityFilter">Priority:</label>
+            <select
+              id="priorityFilter"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {priorityOptions.map(priority => (
+                <option key={priority} value={priority}>{priority}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="inline-filter-group">
+            <label htmlFor="crimeTypeFilter">Type:</label>
+            <select
+              id="crimeTypeFilter"
+              value={crimeTypeFilter}
+              onChange={(e) => setCrimeTypeFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {crimeTypeOptions.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="inline-filter-group">
+            <label htmlFor="timeframeFilter">Time:</label>
+            <select
+              id="timeframeFilter"
+              value={timeframeFilter}
+              onChange={(e) => setTimeframeFilter(e.target.value)}
+            >
+              {timeframeOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="inline-filter-group">
+            <label htmlFor="sortOption">Sort:</label>
+            <select
+              id="sortOption"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+            >
+              {sortOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
       
       {/* Search Bar */}
       <div className="search-container">
@@ -247,11 +372,13 @@ const ViewAllCases = () => {
             <div className="card-header">
               <h2>Recent Cases</h2>
             </div>
-            {loading && !displayCases.length ? (
+            {loading && !filteredCases.length ? (
               <div className="loading-message">Loading cases...</div>
+            ) : !filteredCases.length ? (
+              <div className="empty-message">No cases found</div>
             ) : (
               <ul className="cases-list">
-                {displayCases.map((caseItem) => (
+                {filteredCases.map((caseItem) => (
                   <li 
                     key={caseItem.caseId} 
                     className={`case-item ${selectedCase && selectedCase.caseId === caseItem.caseId ? 'selected' : ''}`}
@@ -290,17 +417,17 @@ const ViewAllCases = () => {
             <div className="card loading-message">
               Loading case details...
             </div>
-          ) : displayCase ? (
+          ) : selectedCase ? (
             <div className="card">
               <div className="case-detail-header">
                 <div className="case-header-content">
-                  <h2 className="case-detail-id">Case: {displayCase.caseId}</h2>
+                  <h2 className="case-detail-id">Case: {selectedCase.caseId}</h2>
                   <div className="case-header-badges">
-                    <span className={`badge priority-${displayCase.priority.toLowerCase()}`}>
-                      {displayCase.priority}
+                    <span className={`badge priority-${selectedCase.priority.toLowerCase()}`}>
+                      {selectedCase.priority}
                     </span>
-                    <span className={`badge status-${displayCase.caseStatus.replace(/\s+/g, '-').toLowerCase()}`}>
-                      {displayCase.caseStatus}
+                    <span className={`badge status-${selectedCase.caseStatus.replace(/\s+/g, '-').toLowerCase()}`}>
+                      {selectedCase.caseStatus}
                     </span>
                   </div>
                 </div>
@@ -375,24 +502,24 @@ const ViewAllCases = () => {
                   <div className="info-grid">
                     <div className="info-item">
                       <p className="info-label">Name</p>
-                      <p className="info-value">{displayCase.complainant.name}</p>
+                      <p className="info-value">{selectedCase.complainant.name}</p>
                     </div>
-                    {displayCase.complainant.email && (
+                    {selectedCase.complainant.email && (
                       <div className="info-item">
                         <p className="info-label">Email</p>
-                        <p className="info-value">{displayCase.complainant.email}</p>
+                        <p className="info-value">{selectedCase.complainant.email}</p>
                       </div>
                     )}
-                    {displayCase.complainant.mobile && (
+                    {selectedCase.complainant.mobile && (
                       <div className="info-item">
                         <p className="info-label">Mobile</p>
-                        <p className="info-value">{displayCase.complainant.mobile}</p>
+                        <p className="info-value">{selectedCase.complainant.mobile}</p>
                       </div>
                     )}
-                    {displayCase.complainant.idProofType && (
+                    {selectedCase.complainant.idProofType && (
                       <div className="info-item">
                         <p className="info-label">ID Type</p>
-                        <p className="info-value">{displayCase.complainant.idProofType}</p>
+                        <p className="info-value">{selectedCase.complainant.idProofType}</p>
                       </div>
                     )}
                   </div>
@@ -404,55 +531,52 @@ const ViewAllCases = () => {
                   <div className="info-grid">
                     <div className="info-item">
                       <p className="info-label">Crime Type</p>
-                      <p className="info-value">{displayCase.crimeDetails.crimeType}</p>
+                      <p className="info-value">{selectedCase.crimeDetails.crimeType}</p>
                     </div>
-                    {displayCase.crimeDetails.subCategory && (
+                    {selectedCase.crimeDetails.subCategory && (
                       <div className="info-item">
                         <p className="info-label">Sub-Category</p>
-                        <p className="info-value">{displayCase.crimeDetails.subCategory}</p>
+                        <p className="info-value">{selectedCase.crimeDetails.subCategory}</p>
                       </div>
                     )}
                     <div className="info-item">
                       <p className="info-label">Date & Time</p>
-                      <p className="info-value">{formatDate(displayCase.crimeDetails.crimeDateTime)}</p>
+                      <p className="info-value">{formatDate(selectedCase.crimeDetails.crimeDateTime)}</p>
                     </div>
-                    {displayCase.crimeDetails.location && (
+                    {selectedCase.crimeDetails.location && (
                       <div className="info-item">
                         <p className="info-label">Location</p>
-                        <p className="info-value">{displayCase.crimeDetails.location}</p>
+                        <p className="info-value">{selectedCase.crimeDetails.location}</p>
                       </div>
                     )}
-                    {displayCase.crimeDetails.platformOrWebsite && (
+                    {selectedCase.crimeDetails.platformOrWebsite && (
                       <div className="info-item">
                         <p className="info-label">Platform/Website</p>
-                        <p className="info-value">{displayCase.crimeDetails.platformOrWebsite}</p>
+                        <p className="info-value">{selectedCase.crimeDetails.platformOrWebsite}</p>
                       </div>
                     )}
                   </div>
                   
                   {/* Description - full width */}
-                  {(displayCase.crimeDetails.description || displayCase.crimeType === 'Phishing') && (
+                  {selectedCase.crimeDetails.description && (
                     <div className="description-container">
                       <p className="info-label">Description</p>
-                      <p className="description-content">
-                        {displayCase.crimeDetails.description || 
-                         "A detailed description of the phishing attempt that occurred through email, claiming to be from a financial institution and requesting personal banking details."}
-                      </p>
+                      <p className="description-content">{selectedCase.crimeDetails.description}</p>
                     </div>
                   )}
                   
                   {/* Monetary Loss */}
-                  {displayCase.crimeDetails.monetaryLoss && (
+                  {selectedCase.crimeDetails.monetaryLoss && (
                     <div className="monetary-loss">
                       <p className="info-label">Monetary Loss</p>
                       <p className="info-value">
-                        {displayCase.crimeDetails.monetaryLoss.currency || "USD"} {displayCase.crimeDetails.monetaryLoss.amount || "0.00"}
+                        {selectedCase.crimeDetails.monetaryLoss.currency} {selectedCase.crimeDetails.monetaryLoss.amount}
                       </p>
                     </div>
                   )}
                 </div>
                 
-                {/* Case Timeline - with all status updates */}
+                {/* Case Timeline */}
                 <div className="section">
                   <h3 className="section-title">Case Timeline</h3>
                   <ul className="timeline">
@@ -460,24 +584,26 @@ const ViewAllCases = () => {
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <p className="timeline-title">Case Submitted</p>
-                        <p className="timeline-date">{formatDate(displayCase.submittedAt)}</p>
+                        <p className="timeline-date">{formatDate(selectedCase.submittedAt)}</p>
                       </div>
                     </li>
-                    <li className="timeline-item">
-                      <div className="timeline-marker status-marker"></div>
-                      <div className="timeline-content">
-                        <p className="timeline-title">Status Updated to {displayCase.caseStatus}</p>
-                        <p className="timeline-date">{formatDate(displayCase.lastUpdatedAt)}</p>
-                      </div>
-                    </li>
-                    {displayCase.statusUpdates && displayCase.statusUpdates.map((update, index) => (
+                    {selectedCase.lastUpdatedAt && (
+                      <li className="timeline-item">
+                        <div className="timeline-marker status-marker"></div>
+                        <div className="timeline-content">
+                          <p className="timeline-title">Status Updated to {selectedCase.caseStatus}</p>
+                          <p className="timeline-date">{formatDate(selectedCase.lastUpdatedAt)}</p>
+                        </div>
+                      </li>
+                    )}
+                    {selectedCase.statusUpdates && selectedCase.statusUpdates.map((update, index) => (
                       <li key={index} className="timeline-item">
                         <div className="timeline-marker status-marker"></div>
                         <div className="timeline-content">
                           <p className="timeline-title">Status Updated to {update.status}</p>
                           <p className="timeline-date">{formatDate(update.updatedAt)}</p>
                           {update.notes && <p className="timeline-notes">{update.notes}</p>}
-                          <p className="timeline-officer">By: {update.updatedBy}</p>
+                          {update.updatedBy && <p className="timeline-officer">By: {update.updatedBy}</p>}
                         </div>
                       </li>
                     ))}

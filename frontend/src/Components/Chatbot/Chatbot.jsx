@@ -1,8 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import "./Chatbot.css";
 import axios from "axios";
+import { Context } from "../../main";
 
 const Chatbot = () => {
+  const {isAuthorized} = useContext(Context);
+  if(!isAuthorized){
+    return;
+  }
   const [messages, setMessages] = useState([
     { text: "Hello! I'm a Cybercrime AI Assistant. I can help with questions about cybersecurity, online fraud prevention, identity theft, data breaches, and other cybercrime topics. How can I assist you today?", sender: "bot" }
   ]);

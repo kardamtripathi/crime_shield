@@ -27,6 +27,8 @@ import CyberCrimeForm from './Components/CyberCrime/CyberCrimeReporting';
 import Chatbot from './Components/Chatbot/Chatbot.jsx';
 import ViewCases from './Components/CyberCrime/ViewCases.jsx';
 import ViewAllCases from './Components/CyberCrime/ViewAllCases.jsx';
+import NewsCarousel from './Components/Home/NewsCarousel.jsx';
+import SpamChecker from './Components/SpamChecker/SpamChecker.jsx';
 const App = () => {
   const {isAuthorized, setIsAuthorized, setUser} = useContext(Context);
   useEffect(() => {
@@ -66,11 +68,12 @@ const App = () => {
           <Route path ='/report' element={<CyberCrimeForm />} />
           <Route path ='/my-cases' element={<ViewCases />} />
           <Route path ='/all-cases' element={<ViewAllCases />} />
+          <Route path ='/spam-checker' element={<SpamChecker />} />
           <Route path = '*' element = {<NotFound />} />
         </Routes>
         <Chatbot />
-        <Footer />
       </BrowserRouter>
+      <Footer />
     </>
   );
 }

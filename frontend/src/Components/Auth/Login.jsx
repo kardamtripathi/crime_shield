@@ -10,6 +10,7 @@ import { RiLock2Fill } from "react-icons/ri";
 import LoginImg from "../../assets/login.png";
 import { BACKEND_URL } from "../../BackendUrl";
 import { CircularProgress } from "@mui/material";
+import SimpleCaptcha from "./SimpleCaptcha";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +21,8 @@ const Login = () => {
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { isAuthorized, setIsAuthorized, user, setUser } = useContext(Context);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+
   // useEffect(() => {
   //   const hasShownMessage = localStorage.getItem("hasShownMessage");
   //   const timestamp = localStorage.getItem("messageTimestamp");
@@ -47,6 +50,11 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
+      if(!captchaVerified){
+        toast.error("Please verify the captcha");
+        setLoading(false);
+        return;
+      }
       const response = await axios.post(
         `${BACKEND_URL}/api/user/login`,
         { email, password, role },
@@ -177,6 +185,7 @@ const Login = () => {
                       placeholder="Enter Your Password"
                     />
                   </div>
+                  <SimpleCaptcha onVerifyChange={setCaptchaVerified}/>
                 <Link to={"/forgotPassword"} id="forgotPassword">Forgot Password?</Link>
                 </div>
                 {

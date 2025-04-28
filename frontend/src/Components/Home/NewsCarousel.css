@@ -1,0 +1,190 @@
+/* Main carousel container */
+.news-carousel {
+    max-width: 70%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Slider customization */
+  .slick-slider {
+    margin-bottom: 30px;
+  }
+  
+  .slick-slide {
+    padding: 15px;
+  }
+  
+  /* News card styling */
+  .news-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    height: 500px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+  }
+  
+  .news-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .news-image-container {
+    width: 100%;
+    height: 350px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .news-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  .news-image:hover {
+    transform: scale(1.01);
+  }
+  
+  .no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #eee;
+    font-style: italic;
+    color: #666;
+  }
+  
+  .news-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .live-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ff3b30;
+    flex-shrink: 0;
+  }
+
+  .live-text{
+    color: #ff3b30;
+    font-weight: 600;
+
+  }
+  
+  .news-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: left;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+  }
+  
+  .read-more-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .read-more-button:hover {
+    background-color: #ff3b30;
+  }
+  
+  /* Custom Dots */
+  .custom-dots {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    position: relative;
+  }
+  
+  .dot {
+    width: 12px;
+    height: 12px;
+    margin: 0 5px;
+    border-radius: 50%;
+    background-color: #bbb;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .active-dot {
+    background-color: #007bff;
+    transform: scale(1.2);
+  }
+  
+  /* Animation for live indicator */
+  @keyframes blinker {
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .live-blink {
+    animation: blinker 1.5s linear infinite;
+  }
+  
+  /* Loader */
+  .loaderContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+  }
+  
+  /* Empty state */
+  .empty-news {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+  }
+  
+  /* Arrow customization */
+  .slick-prev, .slick-next {
+    z-index: 1;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  }
+  
+  .slick-prev:before, .slick-next:before {
+    color: #007bff;
+  }
+  
+  .slick-prev {
+    left: 10px;
+  }
+  
+  .slick-next {
+    right: 10px;
+  }

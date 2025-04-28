@@ -158,10 +158,11 @@ const CyberCrimeForm = () => {
 
       // Submit the form
       const response = await axios.post('http://localhost:4000/api/cybercrime/submit', data, {
+        
+        withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        withCredentials: true
       });
 
       setMessage({
@@ -192,14 +193,14 @@ const CyberCrimeForm = () => {
         suspectOtherDetails: '',
         description: '',
         monetaryLossAmount: '',
-        monetaryLossCurrency: 'USD',
+        monetaryLossCurrency: 'INR',
         evidenceDescription: '',
       });
       setAttachments([]);
       
       // Redirect to success page or case details
       setTimeout(() => {
-        navigate(`/cases`);
+        navigate(`/my-cases`);
       }, 3000);
       
     } catch (error) {
@@ -345,7 +346,7 @@ const CyberCrimeForm = () => {
               >
                 <option value="Passport">Passport</option>
                 <option value="Driver's License">Driver's License</option>
-                <option value="National ID">National ID</option>
+                <option value="Aadhaar ID">Aadhaar ID</option>
                 <option value="Other">Other</option>
               </select>
             </div>

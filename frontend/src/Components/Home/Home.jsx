@@ -5,6 +5,7 @@ import HeroSection from './HeroSection'
 import HowItWorks from './HowItWorks'
 import CrimeCategories from './CrimeCategories'
 import PopularOrganizations from './PopularOrganisations'
+import NewsCarousel from './NewsCarousel'
 const Home = () => {
   const {isAuthorized} = useContext(Context);
   if(!isAuthorized){
@@ -13,6 +14,7 @@ const Home = () => {
   return (
     <section className='homepage page'>
       <HeroSection/>
+      <NewsCarousel />
       <HowItWorks/>
       <CrimeCategories/>
       <PopularOrganizations/>

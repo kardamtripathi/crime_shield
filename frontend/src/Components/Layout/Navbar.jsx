@@ -78,6 +78,10 @@ const Navbar = () => {
               <li>
                 <Link to={'/it-act'} onClick={() => setShow(false)}>IT Act</Link>
               </li>
+              
+              <li>
+                <Link to={'/spam-checker'} onClick={() => setShow(false)}>Spam Checker</Link>
+              </li>
               {loading ? <CircularProgress style={{color: "#0096c7"}} /> : <button onClick={handleLogout}>Logout</button>}
             </ul>
             <div className='hamburger'>
