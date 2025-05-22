@@ -607,6 +607,15 @@ const ViewAllCases = () => {
                         </div>
                       </li>
                     ))}
+                    {selectedCase.fileAttachments.length > 0 && selectedCase.fileAttachments.map((fileItem, index) => (
+                      <li key={index} className="timeline-item">
+                        <div className="timeline-marker status-marker"></div>
+                        <div className="timeline-content">
+                          <p className="timeline-title">File Name: {fileItem.fileName}</p>
+                          <a className="timeline-title" href={fileItem.filePath} target='_blank'>File Link: {fileItem.filePath}</a>
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
